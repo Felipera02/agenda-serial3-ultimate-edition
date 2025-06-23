@@ -21,8 +21,8 @@ namespace AgendaApp.Application.Services
         {
             var appointments = await _context.Appointments
                 .Include(a => a.Category)
-                .Where(a => a.UserId == userId && 
-                           a.StartDateTime >= startDate && 
+                .Where(a => a.UserId == userId &&
+                           a.StartDateTime >= startDate &&
                            a.StartDateTime <= endDate)
                 .ToListAsync();
 
@@ -35,7 +35,8 @@ namespace AgendaApp.Application.Services
                 EndDateTime = a.EndDateTime,
                 CategoryId = a.CategoryId,
                 CategoryName = a.Category.Name,
-                CategoryColor = a.Category.Color
+                CategoryColor = a.Category.Color,
+                IsCompleted = a.IsCompleted
             });
         }
 
@@ -55,13 +56,14 @@ namespace AgendaApp.Application.Services
                 StartDateTime = appointmentDto.StartDateTime,
                 EndDateTime = appointmentDto.EndDateTime,
                 CategoryId = appointmentDto.CategoryId,
-                UserId = userId
+                UserId = userId,
+                IsCompleted = appointmentDto.IsCompleted
             };
 
             var createdAppointment = await _appointmentRepository.AddAsync(appointment);
-            
+
             var category = await _context.Categories.FindAsync(appointmentDto.CategoryId);
-            
+
             return new AppointmentDto
             {
                 Id = createdAppointment.Id,
@@ -71,7 +73,8 @@ namespace AgendaApp.Application.Services
                 EndDateTime = createdAppointment.EndDateTime,
                 CategoryId = createdAppointment.CategoryId,
                 CategoryName = category?.Name ?? "",
-                CategoryColor = category?.Color ?? ""
+                CategoryColor = category?.Color ?? "",
+                IsCompleted = createdAppointment.IsCompleted
             };
         }
 
@@ -96,10 +99,11 @@ namespace AgendaApp.Application.Services
             appointment.StartDateTime = appointmentDto.StartDateTime;
             appointment.EndDateTime = appointmentDto.EndDateTime;
             appointment.CategoryId = appointmentDto.CategoryId;
+            appointment.IsCompleted = appointmentDto.IsCompleted;
             appointment.UpdatedAt = DateTime.UtcNow;
 
             var updatedAppointment = await _appointmentRepository.UpdateAsync(appointment);
-            
+
             return new AppointmentDto
             {
                 Id = updatedAppointment.Id,
@@ -109,7 +113,8 @@ namespace AgendaApp.Application.Services
                 EndDateTime = updatedAppointment.EndDateTime,
                 CategoryId = updatedAppointment.CategoryId,
                 CategoryName = updatedAppointment.Category.Name,
-                CategoryColor = updatedAppointment.Category.Color
+                CategoryColor = updatedAppointment.Category.Color,
+                IsCompleted = updatedAppointment.IsCompleted
             };
         }
 

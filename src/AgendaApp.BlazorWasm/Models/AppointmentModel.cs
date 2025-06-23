@@ -20,9 +20,12 @@ namespace AgendaApp.BlazorWasm.Models
         public DateTime EndDateTime { get; set; } = DateTime.Now.AddHours(1);
 
         [Required(ErrorMessage = "Categoria é obrigatória")]
+        [Range(1, int.MaxValue, ErrorMessage = "Por favor, selecione uma categoria")]
         public int CategoryId { get; set; }
 
         public string CategoryName { get; set; } = string.Empty;
         public string CategoryColor { get; set; } = string.Empty;
+
+        public bool IsCompleted { get; set; } = false;
     }
 }

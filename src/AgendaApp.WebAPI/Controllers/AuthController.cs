@@ -1,5 +1,6 @@
 using AgendaApp.Application.DTOs;
 using AgendaApp.Domain.Entities;
+using AgendaApp.Infrastructure.Data;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
@@ -16,12 +17,14 @@ namespace AgendaApp.WebAPI.Controllers
         private readonly UserManager<User> _userManager;
         private readonly SignInManager<User> _signInManager;
         private readonly IConfiguration _configuration;
+        private readonly AppDbContext _context;
 
-        public AuthController(UserManager<User> userManager, SignInManager<User> signInManager, IConfiguration configuration)
+        public AuthController(UserManager<User> userManager, SignInManager<User> signInManager, IConfiguration configuration, AppDbContext context)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _configuration = configuration;
+            _context = context;
         }
 
         [HttpPost("register")]
@@ -45,10 +48,13 @@ namespace AgendaApp.WebAPI.Controllers
                 // Criar categoria padrão
                 var defaultCategory = new Category
                 {
-                    Name = "Geral",
+                    Name = "Meu Calendário 1",
                     Color = "#3B82F6",
                     UserId = user.Id
                 };
+
+                _context.Categories.Add(defaultCategory);
+                await _context.SaveChangesAsync();
 
                 return Ok(new { message = "Usuário criado com sucesso" });
             }
@@ -70,10 +76,10 @@ namespace AgendaApp.WebAPI.Controllers
             if (result.Succeeded)
             {
                 var token = GenerateJwtToken(user);
-                return Ok(new 
-                { 
+                return Ok(new
+                {
                     token = token,
-                    user = new 
+                    user = new
                     {
                         id = user.Id,
                         email = user.Email,

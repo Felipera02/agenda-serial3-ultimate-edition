@@ -12,5 +12,8 @@ namespace AgendaApp.BlazorWasm.Models
 
         [Required(ErrorMessage = "Cor é obrigatória")]
         public string Color { get; set; } = "#3B82F6";
+
+        // Propriedade para controlar visibilidade (não é enviada para a API)
+        public bool IsVisible { get; set; } = true;
     }
 }

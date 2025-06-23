@@ -1,240 +1,115 @@
 @page "/"
 @using AgendaApp.BlazorWasm.Models
 @using AgendaApp.BlazorWasm.Services
+@using AgendaApp.BlazorWasm.Components
 @inject ApiService ApiService
 @inject AuthService AuthService
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
 
-<div class="min-h-screen bg-gray-50">
-    <!-- Header -->
-    <div class="bg-white shadow">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center py-6">
-                <div class="flex items-center">
-                    <h1 class="text-3xl font-bold text-gray-900">Agenda</h1>
-                </div>
-                <div class="flex items-center space-x-4">
-                    <button @onclick="ShowCategoryModal" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md text-sm font-medium">
-                        Gerenciar Categorias
-                    </button>
-                    <button @onclick="ShowAppointmentModal" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium">
-                        Novo Compromisso
-                    </button>
-                    <button @onclick="Logout" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium">
-                        Sair
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
+<div class="min-h-screen bg-black flex">
+    <!-- Sidebar de Categorias -->
+    <CategorySidebar Categories="@categories"
+                     OnCategoryVisibilityChanged="@HandleCategoryVisibilityChanged"
+                     OnCategoriesChanged="@LoadData" />
 
-    <!-- Calendar Navigation -->
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div class="flex justify-between items-center mb-6">
-            <div class="flex items-center space-x-4">
-                <button @onclick="PreviousWeek" class="bg-white hover:bg-gray-50 border border-gray-300 rounded-md px-4 py-2 text-sm font-medium text-gray-700">
-                    ← Semana Anterior
-                </button>
-                <button @onclick="NextWeek" class="bg-white hover:bg-gray-50 border border-gray-300 rounded-md px-4 py-2 text-sm font-medium text-gray-700">
-                    Próxima Semana →
-                </button>
-                <button @onclick="GoToToday" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md text-sm font-medium">
-                    Hoje
-                </button>
-            </div>
-            <h2 class="text-xl font-semibold text-gray-900">
-                @GetWeekRange()
-            </h2>
-        </div>
-
-        <!-- Calendar Grid -->
-        <div class="bg-white rounded-lg shadow overflow-hidden">
-            <div class="grid grid-cols-8 gap-0">
-                <!-- Header Row -->
-                <div class="bg-gray-50 p-4 text-center font-medium text-gray-700 border-b border-gray-200">
-                    Horário
-                </div>
-                @foreach (var day in GetWeekDays())
-                {
-                    <div class="bg-gray-50 p-4 text-center font-medium text-gray-700 border-b border-gray-200">
-                        <div>@day.ToString("ddd")</div>
-                        <div class="text-lg">@day.Day</div>
-                    </div>
-                }
-
-                <!-- Time Slots -->
-                @for (int hour = 6; hour < 23; hour++)
-                {
-                    <div class="p-2 text-center text-sm text-gray-600 border-b border-gray-200 bg-gray-50">
-                        @hour:00
-                    </div>
-                    @foreach (var day in GetWeekDays())
-                    {
-                        var cellDateTime = day.Date.AddHours(hour);
-                        var cellAppointments = appointments.Where(a => 
-                            a.StartDateTime.Date == day.Date && 
-                            a.StartDateTime.Hour <= hour && 
-                            a.EndDateTime.Hour > hour).ToList();
-
-                        <div class="relative h-16 border-b border-r border-gray-200 cursor-pointer hover:bg-gray-50"
-                             @onclick="() => CreateAppointmentAtTime(cellDateTime)">
-                            @foreach (var appointment in cellAppointments)
-                            {
-                                <div class="absolute inset-1 rounded text-xs text-white p-1 overflow-hidden"
-                                     style="background-color: @appointment.CategoryColor"
-                                     @onclick:stopPropagation="true"
-                                     @onclick="() => EditAppointment(appointment)">
-                                    <div class="font-medium">@appointment.Title</div>
-                                    <div class="text-xs opacity-90">
-                                        @appointment.StartDateTime.ToString("HH:mm") - @appointment.EndDateTime.ToString("HH:mm")
-                                    </div>
-                                </div>
-                            }
+    <!-- Conteúdo Principal -->
+    <div class="flex-1 flex">
+        <div class="flex-1">
+            <!-- Header -->
+            <div class="bg-gray-900 shadow">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div class="flex justify-between items-center py-6">
+                        <div class="flex items-center">
+                            <h1 class="text-3xl font-bold text-white">Agenda</h1>
                         </div>
-                    }
-                }
+                        <div class="flex items-center space-x-4">
+                            <button @onclick="Logout" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium">
+                                Sair
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
+
+            <!-- Calendar Navigation -->
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                <div class="flex justify-between items-center mb-6">
+                    <div class="flex items-center space-x-4">
+                        <!-- Botões de navegação -->
+                        <button @onclick="PreviousWeek" class="bg-gray-800 hover:bg-gray-700 border border-gray-600 rounded-md px-4 py-2 text-sm font-medium text-white">
+                            ←
+                        </button>
+                        <h2 class="text-xl font-semibold text-white">
+                            @GetWeekRange()
+                        </h2>
+                        <button @onclick="NextWeek" class="bg-gray-800 hover:bg-gray-700 border border-gray-600 rounded-md px-4 py-2 text-sm font-medium text-white">
+                            →
+                        </button>
+                        <button @onclick="GoToToday" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md text-sm font-medium">
+                            Hoje
+                        </button>
+                    </div>
+
+                    <!-- Configurações de horário -->
+                    <div class="flex items-center space-x-4">
+                        <div class="flex items-center space-x-2 text-white">
+                            <label class="text-sm">Horário:</label>
+                            <select @bind="startHour" @bind:after="OnHourRangeChanged" class="bg-gray-800 text-white border border-gray-600 rounded px-2 py-1 text-sm">
+                                @for (int i = 0; i <= 12; i++)
+                                {
+                                    <option value="@i">@i:00</option>
+                                }
+                            </select>
+                            <span class="text-gray-400">até</span>
+                            <select @bind="endHour" @bind:after="OnHourRangeChanged" class="bg-gray-800 text-white border border-gray-600 rounded px-2 py-1 text-sm">
+                                @for (int i = 12; i <= 24; i++)
+                                {
+                                    <option value="@i">@i:00</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Calendar Grid -->
+                <CalendarGrid WeekDays="@GetWeekDays()"
+                              Appointments="@appointments"
+                              Categories="@categories"
+                              StartHour="@startHour"
+                              EndHour="@endHour"
+                              OnCellClick="@CreateAppointmentAtTime"
+                              OnAppointmentClick="@EditAppointment"
+                              OnAppointmentCompletedChanged="@HandleAppointmentCompletedChanged" />
+            </div>
+        </div>
+
+        <!-- Mini Calendário -->
+        <div class="w-64 bg-gray-900 p-6">
+            <MiniCalendar CurrentWeekStart="@currentWeekStart"
+                          Appointments="@appointments"
+                          OnWeekSelected="@HandleWeekSelected" />
         </div>
     </div>
 </div>
 
-<!-- Category Modal -->
-@if (showCategoryModal)
-{
-    <div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-            <div class="mt-3">
-                <h3 class="text-lg font-medium text-gray-900 mb-4">Gerenciar Categorias</h3>
-                
-                <!-- Add Category Form -->
-                <EditForm Model="@newCategory" OnValidSubmit="@CreateCategory" class="mb-4">
-                    <DataAnnotationsValidator />
-                    <div class="space-y-3">
-                        <div>
-                            <InputText @bind-Value="newCategory.Name" placeholder="Nome da categoria" 
-                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" />
-                        </div>
-                        <div class="flex space-x-2">
-                            <input type="color" @bind="newCategory.Color" class="w-12 h-10 border border-gray-300 rounded" />
-                            <button type="submit" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md text-sm font-medium">
-                                Adicionar
-                            </button>
-                        </div>
-                    </div>
-                    <ValidationSummary class="text-red-600 text-sm mt-2" />
-                </EditForm>
-
-                <!-- Categories List -->
-                <div class="space-y-2 max-h-60 overflow-y-auto">
-                    @foreach (var category in categories)
-                    {
-                        <div class="flex items-center justify-between p-2 border border-gray-200 rounded">
-                            <div class="flex items-center space-x-2">
-                                <div class="w-4 h-4 rounded" style="background-color: @category.Color"></div>
-                                <span>@category.Name</span>
-                            </div>
-                            <button @onclick="() => DeleteCategory(category.Id)" 
-                                    class="text-red-600 hover:text-red-800 text-sm">
-                                Excluir
-                            </button>
-                        </div>
-                    }
-                </div>
-
-                <div class="flex justify-end mt-4">
-                    <button @onclick="() => showCategoryModal = false" 
-                            class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-md text-sm font-medium">
-                        Fechar
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-}
-
 <!-- Appointment Modal -->
-@if (showAppointmentModal)
-{
-    <div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-            <div class="mt-3">
-                <h3 class="text-lg font-medium text-gray-900 mb-4">
-                    @(editingAppointment?.Id > 0 ? "Editar Compromisso" : "Novo Compromisso")
-                </h3>
-                
-                <EditForm Model="@editingAppointment" OnValidSubmit="@SaveAppointment">
-                    <DataAnnotationsValidator />
-                    <div class="space-y-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700">Título</label>
-                            <InputText @bind-Value="editingAppointment.Title" 
-                                       class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" />
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700">Descrição</label>
-                            <InputTextArea @bind-Value="editingAppointment.Description" rows="3"
-                                           class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" />
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700">Data/Hora Início</label>
-                            <InputDate @bind-Value="editingAppointment.StartDateTime" Type="InputDateType.DateTimeLocal"
-                                       class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" />
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700">Data/Hora Fim</label>
-                            <InputDate @bind-Value="editingAppointment.EndDateTime" Type="InputDateType.DateTimeLocal"
-                                       class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" />
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700">Categoria</label>
-                            <InputSelect @bind-Value="editingAppointment.CategoryId" 
-                                         class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
-                                <option value="0">Selecione uma categoria</option>
-                                @foreach (var category in categories)
-                                {
-                                    <option value="@category.Id">@category.Name</option>
-                                }
-                            </InputSelect>
-                        </div>
-                    </div>
-                    <ValidationSummary class="text-red-600 text-sm mt-2" />
-
-                    <div class="flex justify-between mt-6">
-                        <div>
-                            @if (editingAppointment?.Id > 0)
-                            {
-                                <button type="button" @onclick="DeleteAppointment" 
-                                        class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium">
-                                    Excluir
-                                </button>
-                            }
-                        </div>
-                        <div class="space-x-2">
-                            <button type="button" @onclick="CloseAppointmentModal" 
-                                    class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-md text-sm font-medium">
-                                Cancelar
-                            </button>
-                            <button type="submit" 
-                                    class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md text-sm font-medium">
-                                Salvar
-                            </button>
-                        </div>
-                    </div>
-                </EditForm>
-            </div>
-        </div>
-    </div>
-}
+<AppointmentModal IsVisible="@showAppointmentModal"
+                  Appointment="@editingAppointment"
+                  Categories="@categories"
+                  OnClose="@CloseAppointmentModal"
+                  OnSave="@SaveAppointment"
+                  OnDelete="@DeleteAppointment"
+                  OnCategoriesChanged="@LoadData" />
 
 @code {
     private List<CategoryModel> categories = new();
     private List<AppointmentModel> appointments = new();
     private DateTime currentWeekStart = DateTime.Today.AddDays(-(int)DateTime.Today.DayOfWeek);
-    
-    private bool showCategoryModal = false;
+    private int startHour = 6;
+    private int endHour = 23;
+
     private bool showAppointmentModal = false;
-    private CategoryModel newCategory = new();
     private AppointmentModel? editingAppointment;
 
     protected override async Task OnInitializedAsync()
@@ -254,14 +129,30 @@
         try
         {
             categories = await ApiService.GetCategoriesAsync();
-            var weekStart = currentWeekStart;
-            var weekEnd = currentWeekStart.AddDays(7);
-            appointments = await ApiService.GetAppointmentsAsync(weekStart, weekEnd);
+            // Inicializar todas as categorias como visíveis
+            foreach (var category in categories)
+            {
+                category.IsVisible = true;
+            }
+
+            DateTime startDate = currentWeekStart;
+            DateTime endDate = currentWeekStart.AddDays(7);
+
+            appointments = await ApiService.GetAppointmentsAsync(startDate, endDate);
         }
         catch (Exception ex)
         {
             await JSRuntime.InvokeVoidAsync("alert", "Erro ao carregar dados: " + ex.Message);
         }
+    }
+
+    private void OnHourRangeChanged()
+    {
+        if (startHour >= endHour)
+        {
+            endHour = startHour + 1;
+        }
+        StateHasChanged();
     }
 
     private List<DateTime> GetWeekDays()
@@ -298,79 +189,65 @@
         await LoadData();
     }
 
-    private void ShowCategoryModal()
+    private async Task HandleWeekSelected(DateTime weekStart)
     {
-        newCategory = new CategoryModel();
-        showCategoryModal = true;
+        currentWeekStart = weekStart;
+        await LoadData();
     }
 
-    private async Task CreateCategory()
+    private void HandleCategoryVisibilityChanged((int categoryId, bool isVisible) args)
+    {
+        var category = categories.FirstOrDefault(c => c.Id == args.categoryId);
+        if (category != null)
+        {
+            category.IsVisible = args.isVisible;
+        }
+    }
+
+    private async Task HandleAppointmentCompletedChanged((AppointmentModel appointment, bool isCompleted) args)
     {
         try
         {
-            var created = await ApiService.CreateCategoryAsync(newCategory);
-            if (created != null)
+            args.appointment.IsCompleted = args.isCompleted;
+            var success = await ApiService.UpdateAppointmentAsync(args.appointment);
+            if (!success)
             {
-                categories.Add(created);
-                newCategory = new CategoryModel();
+                // Reverter se falhou
+                args.appointment.IsCompleted = !args.isCompleted;
+                await JSRuntime.InvokeVoidAsync("alert", "Erro ao atualizar status do compromisso");
             }
         }
         catch (Exception ex)
         {
-            await JSRuntime.InvokeVoidAsync("alert", "Erro ao criar categoria: " + ex.Message);
+            // Reverter se falhou
+            args.appointment.IsCompleted = !args.isCompleted;
+            await JSRuntime.InvokeVoidAsync("alert", "Erro ao atualizar status: " + ex.Message);
         }
-    }
-
-    private async Task DeleteCategory(int categoryId)
-    {
-        if (await JSRuntime.InvokeAsync<bool>("confirm", "Tem certeza que deseja excluir esta categoria?"))
-        {
-            try
-            {
-                var success = await ApiService.DeleteCategoryAsync(categoryId);
-                if (success)
-                {
-                    categories.RemoveAll(c => c.Id == categoryId);
-                }
-            }
-            catch (Exception ex)
-            {
-                await JSRuntime.InvokeVoidAsync("alert", "Erro ao excluir categoria: " + ex.Message);
-            }
-        }
-    }
-
-    private void ShowAppointmentModal()
-    {
-        editingAppointment = new AppointmentModel
-        {
-            StartDateTime = DateTime.Now.Date.AddHours(DateTime.Now.Hour + 1),
-            EndDateTime = DateTime.Now.Date.AddHours(DateTime.Now.Hour + 2)
-        };
-        showAppointmentModal = true;
     }
 
     private void CreateAppointmentAtTime(DateTime dateTime)
     {
         editingAppointment = new AppointmentModel
-        {
-            StartDateTime = dateTime,
-            EndDateTime = dateTime.AddHours(1)
-        };
+            {
+                StartDateTime = dateTime,
+                EndDateTime = dateTime.AddHours(1),
+                IsCompleted = false
+            };
         showAppointmentModal = true;
     }
 
     private void EditAppointment(AppointmentModel appointment)
     {
         editingAppointment = new AppointmentModel
-        {
-            Id = appointment.Id,
-            Title = appointment.Title,
-            Description = appointment.Description,
-            StartDateTime = appointment.StartDateTime,
-            EndDateTime = appointment.EndDateTime,
-            CategoryId = appointment.CategoryId
-        };
+            {
+                Id = appointment.Id,
+                Title = appointment.Title,
+                Description = appointment.Description,
+                StartDateTime = appointment.StartDateTime,
+                EndDateTime = appointment.EndDateTime,
+                CategoryId = appointment.CategoryId,
+                IsCompleted = appointment.IsCompleted
+            };
         showAppointmentModal = true;
     }
 
@@ -406,8 +283,7 @@
 
     private async Task DeleteAppointment()
     {
-        if (editingAppointment?.Id > 0 && 
-            await JSRuntime.InvokeAsync<bool>("confirm", "Tem certeza que deseja excluir este compromisso?"))
+        if (editingAppointment?.Id > 0)
         {
             try
             {

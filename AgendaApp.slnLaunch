@@ -1,0 +1,15 @@
+[
+  {
+    "Name": "Rodar Front e Backend",
+    "Projects": [
+      {
+        "Path": "src\\AgendaApp.WebAPI\\AgendaApp.WebAPI.csproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "src\\AgendaApp.BlazorWasm\\AgendaApp.BlazorWasm.csproj",
+        "Action": "Start"
+      }
+    ]
+  }
+]

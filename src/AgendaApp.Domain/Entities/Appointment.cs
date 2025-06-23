@@ -9,9 +9,10 @@ namespace AgendaApp.Domain.Entities
         public DateTime EndDateTime { get; set; }
         public string UserId { get; set; } = string.Empty;
         public int CategoryId { get; set; }
+        public bool IsCompleted { get; set; } = false;
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
-        
+
         public virtual User User { get; set; } = null!;
         public virtual Category Category { get; set; } = null!;
     }

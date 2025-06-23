@@ -24,5 +24,7 @@ namespace AgendaApp.Application.DTOs
 
         public string CategoryName { get; set; } = string.Empty;
         public string CategoryColor { get; set; } = string.Empty;
+
+        public bool IsCompleted { get; set; } = false;
     }
 }

@@ -38,7 +38,7 @@ namespace AgendaApp.Application.Services
             };
 
             var createdCategory = await _categoryRepository.AddAsync(category);
-            
+
             return new CategoryDto
             {
                 Id = createdCategory.Id,
@@ -59,7 +59,7 @@ namespace AgendaApp.Application.Services
             category.Color = categoryDto.Color;
 
             var updatedCategory = await _categoryRepository.UpdateAsync(category);
-            
+
             return new CategoryDto
             {
                 Id = updatedCategory.Id,
@@ -71,11 +71,19 @@ namespace AgendaApp.Application.Services
         public async Task DeleteCategoryAsync(int categoryId, string userId)
         {
             var category = await _context.Categories
+                .Include(c => c.Appointments)
                 .FirstOrDefaultAsync(c => c.Id == categoryId && c.UserId == userId);
 
             if (category == null)
                 throw new UnauthorizedAccessException("Categoria não encontrada ou não pertence ao usuário");
 
+            // Excluir todos os compromissos da categoria primeiro
+            if (category.Appointments.Any())
+            {
+                _context.Appointments.RemoveRange(category.Appointments);
+            }
+
+            // Depois excluir a categoria
             await _categoryRepository.DeleteAsync(category);
         }
     }

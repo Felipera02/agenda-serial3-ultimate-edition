@@ -1,0 +1,220 @@
+﻿@using AgendaApp.BlazorWasm.Models
+@using AgendaApp.BlazorWasm.Services
+@inject ApiService ApiService
+@inject IJSRuntime JSRuntime
+
+@if (IsVisible)
+{
+    <div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div class="mt-3">
+                <h3 class="text-lg font-medium text-gray-900 mb-4">
+                    @(Appointment?.Id > 0 ? "Editar Compromisso" : "Novo Compromisso")
+                </h3>
+
+                <EditForm Model="@Appointment" OnValidSubmit="@SaveAppointment">
+                    <DataAnnotationsValidator />
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Título</label>
+                            <InputText @bind-Value="Appointment.Title"
+                                       class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" />
+                            <ValidationMessage For="@(() => Appointment.Title)" class="text-red-600 text-sm mt-1" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Descrição</label>
+                            <InputTextArea @bind-Value="Appointment.Description" rows="3"
+                                           class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Data/Hora Início</label>
+                            <InputDate @bind-Value="Appointment.StartDateTime" Type="InputDateType.DateTimeLocal"
+                                       class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" />
+                            <ValidationMessage For="@(() => Appointment.StartDateTime)" class="text-red-600 text-sm mt-1" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Data/Hora Fim</label>
+                            <InputDate @bind-Value="Appointment.EndDateTime" Type="InputDateType.DateTimeLocal"
+                                       class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" />
+                            <ValidationMessage For="@(() => Appointment.EndDateTime)" class="text-red-600 text-sm mt-1" />
+                            @if (Appointment != null && Appointment.EndDateTime <= Appointment.StartDateTime)
+                            {
+                                <div class="text-red-600 text-sm mt-1">A data/hora de fim deve ser posterior à data/hora de início</div>
+                            }
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Categoria</label>
+                            <div class="flex space-x-2">
+                                <InputSelect @bind-Value="Appointment.CategoryId"
+                                             class="mt-1 flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                                    <option value="0">Selecione uma categoria</option>
+                                    @foreach (var category in Categories)
+                                    {
+                                        <option value="@category.Id">@category.Name</option>
+                                    }
+                                </InputSelect>
+                                <button type="button" @onclick="ShowQuickAddCategory"
+                                        class="mt-1 bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-md text-sm font-medium">
+                                    +
+                                </button>
+                            </div>
+                            <ValidationMessage For="@(() => Appointment.CategoryId)" class="text-red-600 text-sm mt-1" />
+                        </div>
+
+                        <!-- Marcar como concluído - apenas para edição -->
+                        @if (Appointment?.Id > 0)
+                        {
+                            <div class="flex items-center">
+                                <InputCheckbox @bind-Value="Appointment.IsCompleted"
+                                               class="w-4 h-4 text-indigo-600 bg-gray-100 border-gray-300 rounded focus:ring-indigo-500" />
+                                <label class="ml-2 text-sm font-medium text-gray-700">Marcar como concluído</label>
+                            </div>
+                        }
+
+                        <!-- Quick Add Category Form -->
+                        @if (showQuickAddCategory)
+                        {
+                            <div class="border border-gray-300 rounded-md p-3 bg-gray-50">
+                                <h4 class="text-sm font-medium text-gray-700 mb-2">Nova Categoria</h4>
+                                <div class="space-y-2">
+                                    <input type="text"
+                                           @bind="quickNewCategory.Name"
+                                           placeholder="Nome da categoria"
+                                           class="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" />
+                                    <div class="flex items-center space-x-2">
+                                        <input type="color"
+                                               @bind="quickNewCategory.Color"
+                                               class="w-8 h-6 border border-gray-300 rounded cursor-pointer" />
+                                        <button type="button" @onclick="CreateQuickCategory"
+                                                class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white px-2 py-1 rounded text-sm">
+                                            Criar
+                                        </button>
+                                        <button type="button" @onclick="CancelQuickAddCategory"
+                                                class="bg-gray-400 hover:bg-gray-500 text-white px-2 py-1 rounded text-sm">
+                                            Cancelar
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                    <div class="flex justify-between mt-6">
+                        <div>
+                            @if (Appointment?.Id > 0)
+                            {
+                                <button type="button" @onclick="DeleteAppointment"
+                                        class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium">
+                                    Excluir
+                                </button>
+                            }
+                        </div>
+                        <div class="space-x-2">
+                            <button type="button" @onclick="CloseModal"
+                                    class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-md text-sm font-medium">
+                                Cancelar
+                            </button>
+                            <button type="submit"
+                                    disabled="@(!IsFormValid())"
+                                    class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed">
+                                Salvar
+                            </button>
+                        </div>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public AppointmentModel? Appointment { get; set; }
+    [Parameter] public List<CategoryModel> Categories { get; set; } = new();
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback OnSave { get; set; }
+    [Parameter] public EventCallback OnDelete { get; set; }
+    [Parameter] public EventCallback OnCategoriesChanged { get; set; }
+
+    private bool showQuickAddCategory = false;
+    private CategoryModel quickNewCategory = new();
+
+    private bool IsFormValid()
+    {
+        if (Appointment == null) return false;
+
+        return !string.IsNullOrWhiteSpace(Appointment.Title) &&
+               Appointment.CategoryId > 0 &&
+               Appointment.EndDateTime > Appointment.StartDateTime;
+    }
+
+    private void ShowQuickAddCategory()
+    {
+        quickNewCategory = new CategoryModel();
+        showQuickAddCategory = true;
+    }
+
+    private void CancelQuickAddCategory()
+    {
+        showQuickAddCategory = false;
+        quickNewCategory = new CategoryModel();
+    }
+
+    private async Task CreateQuickCategory()
+    {
+        if (string.IsNullOrWhiteSpace(quickNewCategory.Name))
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "Nome da categoria é obrigatório");
+            return;
+        }
+
+        try
+        {
+            var created = await ApiService.CreateCategoryAsync(quickNewCategory);
+            if (created != null)
+            {
+                created.IsVisible = true;
+                Categories.Add(created);
+
+                // Selecionar automaticamente a nova categoria
+                if (Appointment != null)
+                {
+                    Appointment.CategoryId = created.Id;
+                }
+
+                showQuickAddCategory = false;
+                quickNewCategory = new CategoryModel();
+                await OnCategoriesChanged.InvokeAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "Erro ao criar categoria: " + ex.Message);
+        }
+    }
+
+    private async Task SaveAppointment()
+    {
+        if (!IsFormValid())
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "Por favor, preencha todos os campos obrigatórios e verifique se a data de fim é posterior à data de início.");
+            return;
+        }
+
+        await OnSave.InvokeAsync();
+    }
+
+    private async Task DeleteAppointment()
+    {
+        if (Appointment?.Id > 0 &&
+            await JSRuntime.InvokeAsync<bool>("confirm", "Tem certeza que deseja excluir este compromisso?"))
+        {
+            await OnDelete.InvokeAsync();
+        }
+    }
+
+    private async Task CloseModal()
+    {
+        await OnClose.InvokeAsync();
+    }
+}

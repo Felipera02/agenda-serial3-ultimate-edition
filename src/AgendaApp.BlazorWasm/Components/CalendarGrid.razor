@@ -1,0 +1,167 @@
+﻿@using AgendaApp.BlazorWasm.Models
+
+<div class="bg-white rounded-lg shadow overflow-hidden">
+    <!-- Dica de uso -->
+    <div class="bg-blue-50 border-b border-blue-200 px-4 py-2">
+        <p class="text-sm text-blue-700">
+            💡 <strong>Dica:</strong> Clique em qualquer horário para criar um compromisso
+        </p>
+    </div>
+
+    <div class="grid grid-cols-8 gap-0">
+        <!-- Header Row -->
+        <div class="bg-gray-50 p-4 text-center font-medium text-gray-700 border-b border-gray-200">
+            Horário
+        </div>
+        @foreach (var day in WeekDays)
+        {
+            var isToday = day.Date == DateTime.Today;
+            <div class="@(isToday ? "bg-blue-100" : "bg-gray-50") p-4 text-center font-medium @(isToday ? "text-blue-800" : "text-gray-700") border-b border-gray-200">
+                <div>@day.ToString("ddd")</div>
+                <div class="text-lg">@day.Day</div>
+                @if (isToday)
+                {
+                    <div class="text-xs text-blue-600 font-semibold">HOJE</div>
+                }
+            </div>
+        }
+
+        <!-- Time Slots -->
+        @for (int hour = StartHour; hour < EndHour; hour++)
+        {
+            <div class="p-2 text-center text-sm text-gray-600 border-b border-gray-200 bg-gray-50">
+                @hour:00
+            </div>
+            
+            @foreach (var day in WeekDays)
+            {
+                var cellDateTime = day.Date.AddHours(hour);
+                var isToday = day.Date == DateTime.Today;
+
+                <div class="relative h-16 border-b border-r border-gray-200 cursor-pointer transition-colors duration-200 @(isToday ? "bg-blue-50 hover:bg-blue-100" : "hover:bg-gray-100")"
+                     @onclick="() => OnCellClick.InvokeAsync(cellDateTime)"
+                     title="Clique para adicionar compromisso às @hour:00">
+                    
+                    @if (hour == StartHour) // Renderizar eventos apenas na primeira linha de cada dia
+                    {
+                        var dayAppointments = GetAppointmentsForDay(day.Date);
+                        var appointmentColumns = ArrangeAppointmentsInColumns(dayAppointments);
+                        
+                        @foreach (var column in appointmentColumns)
+                        {
+                            @foreach (var appointment in column)
+                            {
+                                var appointmentStart = appointment.StartDateTime.Date == day.Date ? appointment.StartDateTime : day.Date.AddHours(StartHour);
+                                var appointmentEnd = appointment.EndDateTime.Date == day.Date ? appointment.EndDateTime : day.Date.AddHours(EndHour);
+                                    
+                                var startHour = appointmentStart.Hour + (appointmentStart.Minute / 60.0);
+                                var endHour = appointmentEnd.Hour + (appointmentEnd.Minute / 60.0);
+                                var duration = endHour - startHour;
+                                var topOffset = (startHour - StartHour) * 64;
+                                var height = duration * 64;
+                                var columnIndex = appointmentColumns.IndexOf(column);
+                                var totalColumns = appointmentColumns.Count;
+                                var width = 100.0 / totalColumns;
+                                var leftOffset = columnIndex * width;
+                                
+                                <div class="absolute rounded text-xs text-white p-2 overflow-hidden z-10 group"
+                                     style="background-color: @appointment.CategoryColor; 
+                                            top: @(topOffset)px; 
+                                            height: @(height)px; 
+                                            left: @(leftOffset)%; 
+                                            width: @(width - 1)%; 
+                                            min-height: 20px;"
+                                     @onclick:stopPropagation="true"
+                                     @onclick="() => OnAppointmentClick.InvokeAsync(appointment)">
+                                    
+                                    <div class="font-medium text-xs leading-tight @(appointment.IsCompleted ? "line-through opacity-75" : "")">
+                                        @appointment.Title
+                                    </div>
+                                    @if (height > 30)
+                                    {
+                                        <div class="text-xs opacity-90 leading-tight @(appointment.IsCompleted ? "line-through" : "")">
+                                            @appointmentStart.ToString("HH:mm") - @appointmentEnd.ToString("HH:mm")
+                                            @if (appointment.StartDateTime.Date != appointment.EndDateTime.Date)
+                                            {
+                                                <span class="block text-xs opacity-75">
+                                                    @(appointment.StartDateTime.Date == day.Date ? "Continua..." : "...Continuação")
+                                                </span>
+                                            }
+                                        </div>
+                                    }
+                                    
+                                    <!-- Status de conclusão no canto inferior direito - só no hover -->
+                                    @if (height > 40)
+                                    {
+                                        <div class="absolute bottom-1 right-1 flex items-center text-xs opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <span class="text-white opacity-75 mr-1">Concluído:</span>
+                                            <input type="checkbox" 
+                                                   checked="@appointment.IsCompleted"
+                                                   @onclick:stopPropagation="true"
+                                                   @onchange="@((ChangeEventArgs e) => OnAppointmentCompletedChanged.InvokeAsync((appointment, (bool)e.Value!)))"
+                                                   title="Marcar como concluído"
+                                                   class="w-3 h-3 text-green-600 bg-white border-gray-300 rounded focus:ring-green-500" />
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        }
+                    }
+                </div>
+            }
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public List<DateTime> WeekDays { get; set; } = new();
+    [Parameter] public List<AppointmentModel> Appointments { get; set; } = new();
+    [Parameter] public List<CategoryModel> Categories { get; set; } = new();
+    [Parameter] public int StartHour { get; set; } = 6;
+    [Parameter] public int EndHour { get; set; } = 23;
+    [Parameter] public EventCallback<DateTime> OnCellClick { get; set; }
+    [Parameter] public EventCallback<AppointmentModel> OnAppointmentClick { get; set; }
+    [Parameter] public EventCallback<(AppointmentModel appointment, bool isCompleted)> OnAppointmentCompletedChanged { get; set; }
+
+    private List<AppointmentModel> GetAppointmentsForDay(DateTime date)
+    {
+        return Appointments.Where(a => 
+            (a.StartDateTime.Date <= date && a.EndDateTime.Date >= date) &&
+            Categories.Any(c => c.Id == a.CategoryId && c.IsVisible))
+            .OrderBy(a => a.StartDateTime)
+            .ToList();
+    }
+
+    private List<List<AppointmentModel>> ArrangeAppointmentsInColumns(List<AppointmentModel> dayAppointments)
+    {
+        var columns = new List<List<AppointmentModel>>();
+        
+        foreach (var appointment in dayAppointments)
+        {
+            bool placed = false;
+            
+            // Tentar colocar em uma coluna existente
+            foreach (var column in columns)
+            {
+                bool hasConflict = column.Any(existingApp => 
+                    appointment.StartDateTime < existingApp.EndDateTime && 
+                    appointment.EndDateTime > existingApp.StartDateTime);
+                
+                if (!hasConflict)
+                {
+                    column.Add(appointment);
+                    placed = true;
+                    break;
+                }
+            }
+            
+            // Se não coube em nenhuma coluna, criar nova coluna
+            if (!placed)
+            {
+                columns.Add(new List<AppointmentModel> { appointment });
+            }
+        }
+        
+        return columns;
+    }
+}

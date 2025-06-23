@@ -1,0 +1,118 @@
+﻿@using System.Globalization
+@using AgendaApp.BlazorWasm.Models
+
+<div class="bg-white rounded-lg shadow p-4">
+    <div class="flex items-center justify-between mb-4">
+        <button @onclick="PreviousMonth" class="p-1 hover:bg-gray-100 rounded">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+            </svg>
+        </button>
+        <h3 class="text-sm font-medium text-gray-900">
+            @currentMonth.ToString("MMMM yyyy", CultureInfo.GetCultureInfo("pt-BR"))
+        </h3>
+        <button @onclick="NextMonth" class="p-1 hover:bg-gray-100 rounded">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+            </svg>
+        </button>
+    </div>
+
+    <!-- Dias da semana -->
+    <div class="grid grid-cols-7 gap-1 mb-2">
+        @foreach (var dayName in new[] { "D", "S", "T", "Q", "Q", "S", "S" })
+        {
+            <div class="text-center text-xs font-medium text-gray-500 py-1">
+                @dayName
+            </div>
+        }
+    </div>
+
+    <!-- Semanas do mês -->
+    <div class="space-y-1">
+        @foreach (var week in GetCalendarWeeks())
+        {
+            var isCurrentWeek = IsCurrentWeek(week);
+
+            <div class="grid grid-cols-7 gap-1 p-1 rounded cursor-pointer transition-colors @(isCurrentWeek ? "bg-indigo-100" : "hover:bg-gray-100")"
+                 @onclick="() => SelectWeek(week.First())"
+                 title="Clique para visualizar esta semana">
+
+                @foreach (var day in week)
+                {
+                    var isCurrentMonth = day.Month == currentMonth.Month;
+                    var isToday = day.Date == DateTime.Today;
+                    var hasAppointments = Appointments.Any(a => a.StartDateTime.Date == day.Date);
+
+                    <div class="relative h-8 text-xs rounded flex items-center justify-center
+                               @(isCurrentMonth ? "" : "text-gray-300")
+                               @(isToday ? "bg-blue-500 text-white" : "")">
+                        @day.Day
+                        @if (hasAppointments && isCurrentMonth)
+                        {
+                            <div class="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-green-500 rounded-full"></div>
+                        }
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public DateTime CurrentWeekStart { get; set; } = DateTime.Today.AddDays(-(int)DateTime.Today.DayOfWeek);
+    [Parameter] public List<AppointmentModel> Appointments { get; set; } = new();
+    [Parameter] public EventCallback<DateTime> OnWeekSelected { get; set; }
+
+    private DateTime currentMonth = DateTime.Today;
+
+    protected override void OnInitialized()
+    {
+        currentMonth = new DateTime(CurrentWeekStart.Year, CurrentWeekStart.Month, 1);
+    }
+
+    private void PreviousMonth()
+    {
+        currentMonth = currentMonth.AddMonths(-1);
+    }
+
+    private void NextMonth()
+    {
+        currentMonth = currentMonth.AddMonths(1);
+    }
+
+    private async Task SelectWeek(DateTime weekStart)
+    {
+        // Garantir que seja o início da semana (domingo)
+        var startOfWeek = weekStart.AddDays(-(int)weekStart.DayOfWeek);
+        await OnWeekSelected.InvokeAsync(startOfWeek);
+    }
+
+    private bool IsCurrentWeek(List<DateTime> week)
+    {
+        var weekStart = week.First().AddDays(-(int)week.First().DayOfWeek);
+        return weekStart.Date == CurrentWeekStart.Date;
+    }
+
+    private List<List<DateTime>> GetCalendarWeeks()
+    {
+        var weeks = new List<List<DateTime>>();
+        var firstDayOfMonth = new DateTime(currentMonth.Year, currentMonth.Month, 1);
+
+        // Começar do domingo da primeira semana do mês
+        var startDate = firstDayOfMonth.AddDays(-(int)firstDayOfMonth.DayOfWeek);
+
+        // Adicionar 6 semanas para cobrir todo o mês
+        for (int weekIndex = 0; weekIndex < 6; weekIndex++)
+        {
+            var week = new List<DateTime>();
+            for (int dayIndex = 0; dayIndex < 7; dayIndex++)
+            {
+                week.Add(startDate.AddDays(weekIndex * 7 + dayIndex));
+            }
+            weeks.Add(week);
+        }
+
+        return weeks;
+    }
+}
