@@ -1,0 +1,123 @@
+@page "/register"
+@using AgendaApp.BlazorWasm.Models
+@using AgendaApp.BlazorWasm.Services
+@inject AuthService AuthService
+@inject NavigationManager Navigation
+
+<div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-md w-full space-y-8">
+        <div>
+            <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
+                Criar nova conta
+            </h2>
+        </div>
+        <EditForm Model="@registerModel" OnValidSubmit="@HandleRegister" class="mt-8 space-y-6">
+            <DataAnnotationsValidator />
+            <div class="space-y-4">
+                <div>
+                    <label for="firstName" class="block text-sm font-medium text-gray-700">Nome</label>
+                    <InputText @bind-Value="registerModel.FirstName" id="firstName" 
+                               class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" 
+                               placeholder="Nome" />
+                </div>
+                <div>
+                    <label for="lastName" class="block text-sm font-medium text-gray-700">Sobrenome</label>
+                    <InputText @bind-Value="registerModel.LastName" id="lastName" 
+                               class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" 
+                               placeholder="Sobrenome" />
+                </div>
+                <div>
+                    <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
+                    <InputText @bind-Value="registerModel.Email" id="email" type="email" 
+                               class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" 
+                               placeholder="Email" />
+                </div>
+                <div>
+                    <label for="password" class="block text-sm font-medium text-gray-700">Senha</label>
+                    <InputText @bind-Value="registerModel.Password" id="password" type="password" 
+                               class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" 
+                               placeholder="Senha" />
+                </div>
+                <div>
+                    <label for="confirmPassword" class="block text-sm font-medium text-gray-700">Confirmar Senha</label>
+                    <InputText @bind-Value="registerModel.ConfirmPassword" id="confirmPassword" type="password" 
+                               class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" 
+                               placeholder="Confirmar Senha" />
+                </div>
+            </div>
+
+            <ValidationSummary class="text-red-600 text-sm" />
+
+            @if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <div class="text-red-600 text-sm text-center">
+                    @errorMessage
+                </div>
+            }
+
+            @if (!string.IsNullOrEmpty(successMessage))
+            {
+                <div class="text-green-600 text-sm text-center">
+                    @successMessage
+                </div>
+            }
+
+            <div>
+                <button type="submit" disabled="@isLoading" 
+                        class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50">
+                    @if (isLoading)
+                    {
+                        <span>Criando conta...</span>
+                    }
+                    else
+                    {
+                        <span>Criar conta</span>
+                    }
+                </button>
+            </div>
+
+            <div class="text-center">
+                <a href="/login" class="font-medium text-indigo-600 hover:text-indigo-500">
+                    Já tem uma conta? Entre aqui
+                </a>
+            </div>
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    private RegisterModel registerModel = new();
+    private bool isLoading = false;
+    private string errorMessage = string.Empty;
+    private string successMessage = string.Empty;
+
+    private async Task HandleRegister()
+    {
+        isLoading = true;
+        errorMessage = string.Empty;
+        successMessage = string.Empty;
+
+        try
+        {
+            var success = await AuthService.RegisterAsync(registerModel);
+            if (success)
+            {
+                successMessage = "Conta criada com sucesso! Redirecionando para login...";
+                await Task.Delay(2000);
+                Navigation.NavigateTo("/login");
+            }
+            else
+            {
+                errorMessage = "Erro ao criar conta. Verifique os dados e tente novamente.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Erro ao criar conta. Tente novamente.";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+}
