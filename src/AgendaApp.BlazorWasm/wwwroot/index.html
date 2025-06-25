@@ -46,6 +46,18 @@
         <a class="dismiss">🗙</a>
     </div>
     <script src="_framework/blazor.webassembly.js"></script>
+
+    <script>
+        window.scrollToPosition = (position) => {
+            const container = document.getElementById('calendar-scroll-container');
+            if (container) {
+                container.scrollTo({
+                    top: position,
+                    behavior: 'smooth'
+                });
+            }
+        };
+    </script>
 </body>
 
 </html>

@@ -7,88 +7,71 @@
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
 
-<div class="min-h-screen bg-black flex">
+
+@if (showHint)
+{
+    <div class="bg-blue-50 border-b border-blue-200 px-4 py-2 flex items-center justify-between w-screen">
+        <p class="text-sm text-blue-700">
+            💡 <strong>Dica:</strong> Clique em uma célula para criar um compromisso.
+        </p>
+        <button @onclick="() => showHint = false"
+                class="text-blue-500 hover:text-blue-700 text-sm font-bold">
+            ×
+        </button>
+    </div>
+}
+<!-- Layout Geral -->
+<div class="flex bg-black">
     <!-- Sidebar de Categorias -->
-    <CategorySidebar Categories="@categories"
-                     OnCategoryVisibilityChanged="@HandleCategoryVisibilityChanged"
-                     OnCategoriesChanged="@LoadData" />
-
-    <!-- Conteúdo Principal -->
-    <div class="flex-1 flex">
-        <div class="flex-1">
-            <!-- Header -->
-            <div class="bg-gray-900 shadow">
-                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div class="flex justify-between items-center py-6">
-                        <div class="flex items-center">
-                            <h1 class="text-3xl font-bold text-white">Agenda</h1>
-                        </div>
-                        <div class="flex items-center space-x-4">
-                            <button @onclick="Logout" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium">
-                                Sair
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Calendar Navigation -->
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-                <div class="flex justify-between items-center mb-6">
-                    <div class="flex items-center space-x-4">
-                        <!-- Botões de navegação -->
-                        <button @onclick="PreviousWeek" class="bg-gray-800 hover:bg-gray-700 border border-gray-600 rounded-md px-4 py-2 text-sm font-medium text-white">
-                            ←
-                        </button>
-                        <h2 class="text-xl font-semibold text-white">
-                            @GetWeekRange()
-                        </h2>
-                        <button @onclick="NextWeek" class="bg-gray-800 hover:bg-gray-700 border border-gray-600 rounded-md px-4 py-2 text-sm font-medium text-white">
-                            →
-                        </button>
-                        <button @onclick="GoToToday" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md text-sm font-medium">
-                            Hoje
-                        </button>
-                    </div>
-
-                    <!-- Configurações de horário -->
-                    <div class="flex items-center space-x-4">
-                        <div class="flex items-center space-x-2 text-white">
-                            <label class="text-sm">Horário:</label>
-                            <select @bind="startHour" @bind:after="OnHourRangeChanged" class="bg-gray-800 text-white border border-gray-600 rounded px-2 py-1 text-sm">
-                                @for (int i = 0; i <= 12; i++)
-                                {
-                                    <option value="@i">@i:00</option>
-                                }
-                            </select>
-                            <span class="text-gray-400">até</span>
-                            <select @bind="endHour" @bind:after="OnHourRangeChanged" class="bg-gray-800 text-white border border-gray-600 rounded px-2 py-1 text-sm">
-                                @for (int i = 12; i <= 24; i++)
-                                {
-                                    <option value="@i">@i:00</option>
-                                }
-                            </select>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Calendar Grid -->
-                <CalendarGrid WeekDays="@GetWeekDays()"
-                              Appointments="@appointments"
-                              Categories="@categories"
-                              StartHour="@startHour"
-                              EndHour="@endHour"
-                              OnCellClick="@CreateAppointmentAtTime"
-                              OnAppointmentClick="@EditAppointment"
-                              OnAppointmentCompletedChanged="@HandleAppointmentCompletedChanged" />
-            </div>
-        </div>
-
-        <!-- Mini Calendário -->
-        <div class="w-64 bg-gray-900 p-6">
+    <div class="h-screen">
+        <div class="p-4">
             <MiniCalendar CurrentWeekStart="@currentWeekStart"
                           Appointments="@appointments"
                           OnWeekSelected="@HandleWeekSelected" />
+        </div>
+        <CategorySidebar Categories="@categories"
+                         OnCategoryVisibilityChanged="@HandleCategoryVisibilityChanged"
+                         OnCategoriesChanged="@LoadData" />
+    </div>
+    <div class="w-full">
+        <div class="flex bg-black h-16 items-center">
+            <div class="w-full h-8 px-4 flex items-center justify-center">
+                <div class="flex h-full space-x-0.5">
+                    <button @onclick="PreviousWeek" class="items-center rounded-l-md flex items-center h-full bg-gray-100 hover:bg-gray-200 px-2.5 py-1  text-gray-900">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="m15 19l-7-7 7-7" />
+                        </svg>
+                    </button>
+                    <h2 class="flex items-center justify-center h-8 w-40 text-sm bg-gray-100 text-gray-900 font-medium">
+                        @GetWeekRange()
+                    </h2>
+                    <button @onclick="NextWeek" class="items-center rounded-r-md flex items-center h-full bg-gray-100 hover:bg-gray-200 px-2.5 py-1  text-gray-900">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+                        </svg>
+                    </button>
+                </div>
+                <div class="ml-4 flex items-center h-8">
+                    <button @onclick="GoToToday" class="flex items-center h-full hover:text-gray-400 text-white px-4 rounded-md text-sm">
+                        Exibir Semana Atual
+                    </button>
+                </div>
+                <div class="ml-auto h-8 flex items-center">
+                    <button @onclick="Logout" class="flex items-center h-full hover:text-red-600 text-white px-4 rounded-md ">
+                        Sair
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div>
+            <CalendarGrid WeekDays="@GetWeekDays()"
+                          Appointments="@appointments"
+                          Categories="@categories"
+                          StartHour="0"
+                          EndHour="24"
+                          OnCellClick="@CreateAppointmentAtTime"
+                          OnAppointmentClick="@EditAppointment"
+                          OnAppointmentCompletedChanged="@HandleAppointmentCompletedChanged" />
         </div>
     </div>
 </div>
@@ -106,11 +89,11 @@
     private List<CategoryModel> categories = new();
     private List<AppointmentModel> appointments = new();
     private DateTime currentWeekStart = DateTime.Today.AddDays(-(int)DateTime.Today.DayOfWeek);
-    private int startHour = 6;
-    private int endHour = 23;
 
     private bool showAppointmentModal = false;
     private AppointmentModel? editingAppointment;
+
+    private bool showHint = true;
 
     protected override async Task OnInitializedAsync()
     {
@@ -122,6 +105,7 @@
         }
 
         await LoadData();
+        await ScrollToCurrentTime();
     }
 
     private async Task LoadData()
@@ -129,14 +113,14 @@
         try
         {
             categories = await ApiService.GetCategoriesAsync();
-            // Inicializar todas as categorias como visíveis
             foreach (var category in categories)
             {
                 category.IsVisible = true;
             }
 
-            DateTime startDate = currentWeekStart;
-            DateTime endDate = currentWeekStart.AddDays(7);
+            // CORREÇÃO: Buscar eventos que podem começar antes ou terminar depois da semana
+            DateTime startDate = currentWeekStart.AddDays(-7); // Uma semana antes
+            DateTime endDate = currentWeekStart.AddDays(14);   // Uma semana depois
 
             appointments = await ApiService.GetAppointmentsAsync(startDate, endDate);
         }
@@ -146,14 +130,14 @@
         }
     }
 
-    private void OnHourRangeChanged()
-    {
-        if (startHour >= endHour)
-        {
-            endHour = startHour + 1;
-        }
-        StateHasChanged();
-    }
+    // private void OnHourRangeChanged()
+    // {
+    //     if (startHour >= endHour)
+    //     {
+    //         endHour = startHour + 1;
+    //     }
+    //     StateHasChanged();
+    // }
 
     private List<DateTime> GetWeekDays()
     {
@@ -187,6 +171,20 @@
     {
         currentWeekStart = DateTime.Today.AddDays(-(int)DateTime.Today.DayOfWeek);
         await LoadData();
+        await ScrollToCurrentTime();
+
+    }
+
+    private async Task ScrollToCurrentTime()
+    {
+        // await Task.Delay(100);
+
+        var currentHour = DateTime.Now.Hour;
+        // Posicionar scroll para mostrar 2 horas antes da atual (para contexto)
+        var targetHour = Math.Max(0, currentHour - 2);
+        var scrollPosition = targetHour * 80; // 80px por hora
+
+        await JSRuntime.InvokeVoidAsync("scrollToPosition", scrollPosition);
     }
 
     private async Task HandleWeekSelected(DateTime weekStart)

@@ -1,0 +1,20 @@
+[33mbb0bcc1[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mcopia-main[m[33m, [m[1;31morigin/main[m[33m, [m[1;32mmain[m[33m)[m Atualiza modal de compromisso com validação e categorias
+[33m25d98f6[m Atualiza formulários e layout do calendário
+[33mebbeb55[m Adicionar nova funcionalidade e aprimorar lógica existente
+[33m2056295[m Merge branch 'main' of https://github.com/Felipera02/agenda-serial3-ultimate-edition
+[33ma01c93b[m Update appsettings.json
+[33m082ef05[m Update Program.cs
+[33m120e26f[m Adiciona configuração de HttpClient em Program.cs
+[33m6be7ce0[m Adiciona configuração de HttpClient em Program.cs
+[33m4264893[m Merge branch 'main' of https://github.com/Felipera02/agenda-serial3-ultimate-edition
+[33m055bd21[m Adiciona fluxo de trabalho de implantação para Blazor
+[33m29a54b8[m Delete .github/workflows directory
+[33me061c35[m Create main.yml
+[33mf023570[m Create azure-static-web-apps.yml
+[33m7564430[m Update azure-static-web-apps-green-field-0c7e8030f.yml
+[33m4984dd5[m Atualiza configuração de CI/CD e ajustes no ambiente
+[33mf493e7c[m ci: add Azure Static Web Apps workflow file on-behalf-of: @Azure opensource@microsoft.com
+[33m8837a54[m ci: add Azure Static Web Apps workflow file on-behalf-of: @Azure opensource@microsoft.com
+[33m5789a64[m Adiciona gerenciamento de conclusão de compromissos
+[33m4d287d2[m Adicionar arquivos de projeto.
+[33m68b8cd3[m Adicione .gitattributes, .gitignore e README.md.

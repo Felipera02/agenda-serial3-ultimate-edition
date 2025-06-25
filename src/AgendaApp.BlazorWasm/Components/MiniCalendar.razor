@@ -1,42 +1,51 @@
 ﻿@using System.Globalization
 @using AgendaApp.BlazorWasm.Models
 
-<div class="bg-white rounded-lg shadow p-4">
-    <div class="flex items-center justify-between mb-4">
-        <button @onclick="PreviousMonth" class="p-1 hover:bg-gray-100 rounded">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-            </svg>
-        </button>
-        <h3 class="text-sm font-medium text-gray-900">
-            @currentMonth.ToString("MMMM yyyy", CultureInfo.GetCultureInfo("pt-BR"))
+<div class="bg-black rounded-lg shadow">
+    @{
+        var mes = currentMonth.ToString("MMMM", CultureInfo.GetCultureInfo("pt-BR"));
+        var mesAbreviado = currentMonth.ToString("MMM", CultureInfo.GetCultureInfo("pt-BR"));
+        var ano = currentMonth.ToString("yyyy");
+    }
+
+    <div class="flex flex-col h-24 mb-4 space-y-2">
+        <!-- Título alinhado à esquerda -->
+        <h3 class="text-4xl text-left">
+            <span class="text-white capitalize font-medium">@mes</span>
+            <span class="text-green-500 ml-1">@ano</span>
         </h3>
-        <button @onclick="NextMonth" class="p-1 hover:bg-gray-100 rounded">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-            </svg>
-        </button>
+
+        <!-- Botões centralizados abaixo -->
+        <div class="flex justify-between w-full">
+            <button @onclick="PreviousMonth" class="flex items-center px-3 py-1 text-sm text-white hover:text-gray-500">
+                ← @mesAbreviado @ano
+            </button>
+            <button @onclick="NextMonth" class="flex items-center px-3 py-1 text-sm text-white hover:text-gray-500">
+                @mesAbreviado @ano →
+            </button>
+        </div>
     </div>
 
+
     <!-- Dias da semana -->
-    <div class="grid grid-cols-7 gap-1 mb-2">
-        @foreach (var dayName in new[] { "D", "S", "T", "Q", "Q", "S", "S" })
+    <div class="grid grid-cols-7 mb-2 h-6">
+        @foreach (var dayName in new[] { "DOM", "SEG", "TER", "QUA", "QUI", "SEX", "SAB" })
         {
-            <div class="text-center text-xs font-medium text-gray-500 py-1">
+            <div class="text-center text-xs font-medium text-gray-500 w-10">
                 @dayName
             </div>
         }
     </div>
 
     <!-- Semanas do mês -->
-    <div class="space-y-1">
+    <div>
         @foreach (var week in GetCalendarWeeks())
         {
             var isCurrentWeek = IsCurrentWeek(week);
 
-            <div class="grid grid-cols-7 gap-1 p-1 rounded cursor-pointer transition-colors @(isCurrentWeek ? "bg-indigo-100" : "hover:bg-gray-100")"
+            <div class="grid h-8 grid-cols-7 items-center cursor-pointer transition-colors @(isCurrentWeek ? "bg-gray-700" : "hover:bg-gray-900")"
                  @onclick="() => SelectWeek(week.First())"
-                 title="Clique para visualizar esta semana">
+                 title="Visualizar esta semana">
 
                 @foreach (var day in week)
                 {
@@ -44,14 +53,13 @@
                     var isToday = day.Date == DateTime.Today;
                     var hasAppointments = Appointments.Any(a => a.StartDateTime.Date == day.Date);
 
-                    <div class="relative h-8 text-xs rounded flex items-center justify-center
-                               @(isCurrentMonth ? "" : "text-gray-300")
-                               @(isToday ? "bg-blue-500 text-white" : "")">
-                        @day.Day
-                        @if (hasAppointments && isCurrentMonth)
-                        {
-                            <div class="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-green-500 rounded-full"></div>
-                        }
+                    <div class="relative h-full text-xs font-semibold rounded flex items-center justify-center
+                        @(isCurrentMonth ? "text-white" : "text-gray-500")">
+
+                        <div class="flex items-center justify-center
+                             @(isToday ? "w-8 h-8 bg-blue-500 text-white" : "")">
+                            @day.Day
+                        </div>
                     </div>
                 }
             </div>
@@ -68,7 +76,24 @@
 
     protected override void OnInitialized()
     {
-        currentMonth = new DateTime(CurrentWeekStart.Year, CurrentWeekStart.Month, 1);
+        UpdateCurrentMonth();
+    }
+
+    // NOVA FUNCIONALIDADE: Atualizar o mês quando CurrentWeekStart mudar
+    protected override void OnParametersSet()
+    {
+        UpdateCurrentMonth();
+    }
+
+    private void UpdateCurrentMonth()
+    {
+        // Atualizar o mês baseado na semana atual selecionada
+        var newMonth = new DateTime(CurrentWeekStart.Year, CurrentWeekStart.Month, 1);
+        if (currentMonth != newMonth)
+        {
+            currentMonth = newMonth;
+            StateHasChanged();
+        }
     }
 
     private void PreviousMonth()
