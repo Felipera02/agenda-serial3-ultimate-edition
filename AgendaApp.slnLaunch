@@ -4,7 +4,8 @@
     "Projects": [
       {
         "Path": "src\\AgendaApp.WebAPI\\AgendaApp.WebAPI.csproj",
-        "Action": "Start"
+        "Action": "Start",
+        "DebugTarget": "AgendaApp.WebAPI"
       },
       {
         "Path": "src\\AgendaApp.BlazorWasm\\AgendaApp.BlazorWasm.csproj",
