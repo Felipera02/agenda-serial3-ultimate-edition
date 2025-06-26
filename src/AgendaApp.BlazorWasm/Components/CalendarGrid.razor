@@ -10,7 +10,7 @@
             @foreach (var day in WeekDays)
             {
                 var isToday = day.Date == DateTime.Today;
-                <div class="relative h-16 @(isToday ? "bg-blue-50" : "bg-white") border-r border-gray-200">
+                <div class="relative h-16 @(isToday ? "bg-blue-50" : "bg-white") border-r border-b border-gray-200">
                     <div class="text-xs text-gray-500 px-2 pt-1 font-bold relative z-10">
                         @day.ToString("dddd").ToUpper()
                     </div>
@@ -23,7 +23,7 @@
             }
         </div>
 
-        <div id="calendar-scroll-container" class="overflow-y-auto" style="max-height: calc(95vh - 96px);">
+        <div class="overflow-y-auto" style="max-height: calc(100vh - 150px);">
             <div class="grid grid-cols-8 gap-0 relative"
                  style="grid-template-columns: 56px repeat(7, 1fr);">
 
